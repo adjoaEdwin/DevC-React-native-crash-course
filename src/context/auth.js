@@ -1,59 +1,65 @@
-import React, {createContext, useReducer, useMemo, useContext} from 'react';
-import {storeData, clearData} from '../api';
+import React, {createContext, useContext, useReducer, useMemo} from 'react';
+import AsyncStorage from '@react-native-community/async-storage';
 
 const AuthContext = createContext();
 
-function reducer(state, action) {
+function reducer(prevState, action) {
   switch (action.type) {
     case 'RESTORE_TOKEN':
       return {
-        ...state,
+        ...prevState,
         userToken: action.token,
         isLoading: false,
       };
     case 'SIGN_IN':
       return {
-        ...state,
-        userToken: action.token,
+        ...prevState,
         isSignout: false,
+        userToken: action.token,
       };
-
-    case 'LOG_OUT':
+    case 'SIGN_OUT':
       return {
-        ...state,
-        userToken: null,
+        ...prevState,
         isSignout: true,
+        userToken: null,
       };
-    default:
-      break;
   }
 }
 
-function AuthProvider(props) {
+function AuthProvider({children}) {
   const [state, dispatch] = useReducer(reducer, {
-    userToken: null,
+    isLoading: true,
     isSignout: false,
-    isLoading: false,
+    userToken: null,
   });
 
   const authContext = useMemo(
     () => ({
       handleSignIn: async data => {
-        storeData(data);
-        dispatch({type: 'SIGN_IN', token: 'some-dummy-text'});
+        dispatch({type: 'SIGN_IN', token: 'dummy-auth-token'});
       },
-      handleSignUp: async data => {
-        dispatch({type: 'SIGN_IN', token: 'some-dummy-text'});
+      handleSignOut: async () => {
+        await AsyncStorage.clear();
+        dispatch({type: 'SIGN_OUT'});
       },
-      handleSignOut: () => {
-        clearData();
-        dispatch({type: 'LOG_OUT'});
+      bootstrapAsync: async () => {
+        let userToken;
+
+        try {
+          userToken = await AsyncStorage.getItem('userToken');
+        } catch (e) {
+          // Restoring token failed
+        }
+        dispatch({type: 'RESTORE_TOKEN', token: userToken});
       },
     }),
     [],
   );
-
-  return <AuthContext.Provider value={{state, ...authContext}} {...props} />;
+  return (
+    <AuthContext.Provider value={{state, authContext}}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 function useAuth() {

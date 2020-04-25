@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {
   Container,
   Header,
@@ -9,22 +9,15 @@ import {
   Button,
   Text,
 } from 'native-base';
+import AsyncStorage from '@react-native-community/async-storage';
 
 import {useAuth} from '../../context/auth';
 
-export default function SignUp() {
-  const {handleSignUp} = useAuth();
+export default function SignIn() {
+  const [username, setUsername] = React.useState('');
+  const [password, setPassword] = React.useState('');
 
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-
-  const handleSubmit = async () => {
-    try {
-      await handleSignUp(username, password);
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  const {authContext} = useAuth();
 
   return (
     <Container>
@@ -34,17 +27,27 @@ export default function SignUp() {
           <Item>
             <Input
               placeholder="Username"
-              onChangeText={username => setUsername(username)}
+              value={username}
+              onChangeText={setUsername}
             />
           </Item>
           <Item last>
             <Input
               placeholder="Password"
-              onChangeText={password => setPassword(password)}
+              value={password}
+              onChangeText={setPassword}
             />
           </Item>
-          <Button full primary onPress={handleSubmit}>
-            <Text>Sign up</Text>
+          <Button
+            full
+            onPress={() => {
+              authContext.handleSignIn({username, password});
+              AsyncStorage.setItem(
+                'userToken',
+                JSON.stringify({username, password}),
+              );
+            }}>
+            <Text>Log In</Text>
           </Button>
         </Form>
       </Content>
