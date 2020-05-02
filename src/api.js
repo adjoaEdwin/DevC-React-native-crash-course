@@ -38,10 +38,16 @@ async function getData(data) {
   }
 }
 
+async function removeBook() {
+  try {
+    await AsyncStorage.removeItem('BookInfo');
+  } catch (error) {}
+}
+
 async function clearData() {
   try {
     await AsyncStorage.clear();
   } catch (error) {}
 }
 
-export {storeData, clearData, getData, storeInfo, getInfo};
+export {storeData, clearData, getData, storeInfo, getInfo, removeBook};
